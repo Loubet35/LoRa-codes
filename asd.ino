@@ -3,6 +3,9 @@
 #include "SPI.h"
 #include "file.h"
 #include <LoRa.h>
+#include <TimeLib.h>
+#include <sys/time.h>
+
 
 #include <alloca.h>
 #include <string>
@@ -42,9 +45,7 @@ SPIClass spiLoRa(VSPI);
 #define DI0 26
 #define BAND 450E6
 
- char Loradata[50];
- float longi, lati, alt;
-
+ char Loradata[300];
 
 /*  /!\ Pour utiliser le port micro-SD de la carte TTGO LoRa32 OLED v.2, définir les pins du bus SPI tels que: 
  * Le pin n°13 correspond au chipSelect de la carte SD => SD.begin(CS,...).
@@ -52,6 +53,7 @@ SPIClass spiLoRa(VSPI);
  *             
  * On a donc SS = CS = 13
  */
+
 
 void setup(){
     
@@ -93,7 +95,7 @@ void setup(){
         Serial.println("UNKNOWN");
     }
 
-    char header[100]="     lon      ||     lat     ||     alt \n";
+    char header[300]=" year      ||   month || day ||  hour ||minute||second||   speed   ||      lon      ||      lat     ||      alt      ||    course   \n";
     writeFile(SD,"/donnees.txt",header);
     writeFile(SD,"/donnees2.txt","Header");
 
@@ -108,10 +110,16 @@ void loop(){
      Serial.print(gps.location.lat(), 6);
      Serial.print(" Longitude= "); 
      Serial.println(gps.location.lng(), 6);
- Serial.print("altitude= ");
- Serial.print(gps.altitude.meters(), 6);
+     Serial.print("altitude= ");
+     Serial.print(gps.altitude.meters(), 6);
+     Serial.print("Time= ");
+     Serial.println(gps.time.value(), 6);
+     Serial.print("Speed= ");
+     Serial.println(gps.speed.mps(), 6);
+     Serial.println("Course= ");
+     Serial.println(gps.course.deg(), 6);
 
-     
+
    }
  }
   int Size = LoRa.parsePacket();
@@ -120,24 +128,39 @@ void loop(){
     String LoRaData = LoRa.readString();
     Serial.println(LoRaData);
 
+
+    float yearr = gps.date.year();
+
+    float monthh = gps.date.month();
+
+    float dayy = gps.date.day();
+
+    float hourr = gps.time.hour()+1;
+
+    float minutee = gps.time.minute();
+
+    float secondd = gps.time.second();
+
+    float Speed = gps.speed.mps();
+    
     float longi = gps.location.lng() ;   
                                  
     float lati = gps.location.lat(); 
 
     float alt = gps.altitude.meters(); 
 
-    Serial.println(longi);
-    Serial.println(lati);
-    Serial.println(alt);
+    float Course = gps.course.deg();
+    
 
 
-    sprintf(Loradata," %f \t %f \t %f \n ", longi, lati, alt);
+    sprintf(Loradata," %.1f \t %.1f \t %.1f \t %.1f \t %.1f \t %.1f \t %f \t %f \t %f \t %f \t %f \t \n ", yearr, monthh, dayy, hourr, minutee, secondd, Speed, longi, lati, alt, Course);
      
     appendFile(SD,"/donnees.txt",Loradata);
        
     LoRaData = LoRaData + "\n";
     
     appendFile(SD,"/donnees2.txt",LoRaData);
+
     
   }
  
